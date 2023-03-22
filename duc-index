@@ -1,0 +1,3 @@
+#!/bin/sh
+sudo DUC_DATABASE=/home/john/.duc.db duc index "$@"
+sudo chown -R john:john /home/john/.duc.db
