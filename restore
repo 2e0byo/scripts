@@ -1,0 +1,26 @@
+#!/usr/bin/env python3
+
+from argparse import ArgumentParser
+from pathlib import Path
+from re import sub
+from shutil import copy, copytree
+
+parser = ArgumentParser()
+parser.add_argument("INF", help="Backup to restore", type=Path)
+parser.add_argument("-m", "--move", help="Move, don't copy.", action="store_true")
+parser.add_argument(
+    "-f", "--overwrite", help="Overwrite existing backups.", action="store_true"
+)
+args = parser.parse_args()
+
+dst = args.INF.with_name(sub(r"(\.[0-9]+)*\.bak$", "", args.INF.name))
+if not args.overwrite and dst.exists():
+    raise FileExistsError(f"Unable to restore {args.INF} to {dst}: file exists")
+
+if args.move:
+    args.INF.rename(dst)
+else:
+    if args.INF.is_dir():
+        copytree(args.INF, dst)
+    else:
+        copy(args.INF, dst)
