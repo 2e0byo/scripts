@@ -1,0 +1,11 @@
+#!/bin/sh
+if [ -e /tmp/monitors ]; then
+  MONITORS=$(cat /tmp/monitors)
+else
+  MONITORS=$(ddcutil detect | grep i2c- | sed 's/.*i2c-//')
+  echo $MONITORS > /tmp/monitors
+fi
+
+for monitor in $MONITORS; do
+  ddcutil setvcp 10 $@ --bus "$monitor"
+done
