@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+tmdir=$(mktemp -d --tmpdir=/tmp)
+cd $tmpdir
+cat > label.tex << EOF
+\documentclass[12pt, oneside]{extreport}
+\usepackage{courier}
+\usepackage[
+  paperheight=19mm,
+  paperwidth=50.8mm,
+  scale=1,
+  left=4px,
+]{geometry}
+\pagestyle{empty}
+\setlength{\parindent}{0em}
+\usepackage{qrcode}
+\begin{document}
+\bfseries
+\fontsize{16}{16}\selectfont
+
+\begin{minipage}{0.5\textwidth}
+\qrcode[height=19mm]{$1}
+\end{minipage}
+\begin{minipage}{0.5\textwidth}
+\texttt{$2}\centering\par
+\end{minipage}
+
+\end{document}
+EOF
+pdflatex label.tex
+lp -d DYMO_LabelWriter_310 label.pdf
