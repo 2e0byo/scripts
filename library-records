@@ -1,0 +1,100 @@
+#!/usr/bin/python3
+from sys import stdin
+import re
+from datetime import datetime
+
+records = []
+record = {}
+for line in stdin:
+    if re.search(r'Record [0-9]+ of [0-9]+', line) is not None:
+        if len(record) > 0:
+            records.append(record)
+        record = {}  # new record
+        continue
+    if line.startswith("AUTHOR"):
+        record["author"] = line.replace("AUTHOR", "").strip()
+    elif line.startswith("TITLE"):
+        record["title"] = line.replace("TITLE", "").strip()
+    elif line.startswith("ADD AUTHOR") and "author" not in record.keys():
+        record["author"] = line.replace("ADD AUTHOR", "").strip()
+    elif ">" in line:
+        try:
+            shelfmark = re.findall(
+                r'[0-9]+ > (.*?) ([0-9]+\.*[0-9]* [A-Z]+/*[A-Z]*)', line)[0]
+        except IndexError:  # re failed, maybe ushaw ref only?
+            shelfmark = re.findall(r'(Ushaw) ([A-Z]*\.[A-Z]*\.[0-9]*\.[0-9]*)',
+                                   line)[0]
+            if len(shelfmark) == 0:
+                print("error!", line)
+                continue
+        try:
+            record["shelfmark"].append(shelfmark)
+        except KeyError:
+            record["shelfmark"] = [shelfmark]
+records.append(record)
+
+print("""
+                      Library Books to Obtain as of
+                        %s
+                            Total Records: %i
+    """ % (datetime.now(), len(records)))
+
+bryson = {}
+johns = {}
+ushaw = {}
+sharp = {}
+chapter = {}
+remote = {}
+
+libraries = {"Ushaw": ushaw, "Bryson": bryson, "John's": johns, "Sharp": sharp, "Chapter": chapter, "Remote Store": remote}
+
+m = 1
+for record in records:
+    for p in ["shelfmark", "author", "title"]:
+        if p not in record:
+            record[p] = ""
+    shelfmark = record["shelfmark"]
+
+    if len(shelfmark) > 1:
+        if len(set(shelfmark)) == 1:
+            record["multiple"] = [str(len(shelfmark)) + "v"]
+        else:
+            record["multiple"] = ["*" + str(m)]
+            m += 1
+    else:
+        record["multiple"] = ["  "]
+    for copy in shelfmark:
+        for library in libraries:
+            if library in copy[0]:
+                if library == "Ushaw":  # we don't want to list ushaw copies if possible
+                    # warning: I'm addicted to list comprehensions
+                    others = [i for i in libraries.keys() if i != "Ushaw"]
+                    flat_shelfmark = " ".join(
+                        [item for sublist in shelfmark for item in sublist])
+                    holding_libraries = [
+                        i for i in libraries.keys() if i in flat_shelfmark
+                    ]
+                    if len(holding_libraries)> 2:
+                        # multiple copies outside Ushaw
+                        continue
+                    elif len(holding_libraries) == 2:
+                        # Ushaw only other copy
+                        record["multiple"][0] = "  "
+                        m -= 1
+                        continue
+                key = copy[1] + record["title"]
+                libraries[library][key] = record.copy()
+                libraries[library][key]["shelfmark"] = copy[1]
+
+for library in libraries:
+    record = libraries[library]
+    if len(record) == 0:
+        continue
+    print("Books from %s (%i/%i)" %
+          (library, len([i for i in record
+                         if record[i]["multiple"][0] != "  "]), len(record)))
+    for mark in sorted(record):
+        print("%s %-18.18s %-10.10s  %-43.43s" %
+              (record[mark]["multiple"][0], record[mark]["shelfmark"],
+               record[mark]["author"], record[mark]["title"]))
+    print("\n")
