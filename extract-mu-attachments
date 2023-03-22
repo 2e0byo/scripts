@@ -1,0 +1,59 @@
+#!/usr/bin/python3
+"""
+Basic script to extract everything from all emails matching a query, preventing duplication.
+"""
+from subprocess import check_output, CalledProcessError
+import argparse
+from sys import exit
+from os import mkdir, rename
+import re
+
+parser = argparse.ArgumentParser()
+parser.add_argument("QUERY")
+args = parser.parse_args()
+# maybe add ability to select here
+try:
+    emails = check_output(["mu","find",args.QUERY, "-f", "l"],encoding="UTF8").strip().split("\n")
+except CalledProcessError as e:
+    print("Query returned error:", e)
+    exit(1)
+
+print("Found %i emails." % len(emails))
+
+"""List of all mime types to be considered as attachments.  We do this
+ourselves so we can handle cases of multiple attachments with the same
+name.  Partial strings e.g. image/ will match as if image/*."""
+attachment_mime_types = [
+    "image/",
+    "application/"
+    # add here as required
+]
+
+extracted_fnames = []
+
+try:
+    mkdir("/tmp/mu-extracted-images")
+except:
+    pass
+
+for mail in emails:
+    parts = check_output(["mu", "extract", mail], encoding="UTF8").strip().split("\n")
+    for part in parts:
+        if not "/" in part:
+            continue
+        part = part.strip()
+        p = "([0-9]*) (.+) (.+?)/(.+?) \[(.+?)\] \((.+?)\)"
+        a = re.findall(p, part)[0]
+        no, fname, ma, mb, disposition, size = a
+        mimetype = ma + "/" + mb
+        orig_fname = fname
+        if not any([i in mimetype for i in attachment_mime_types]):
+            continue
+        prepend = 0
+        while fname in extracted_fnames:
+            prepend += 1
+            fname = str(prepend) + "_duplicate_" + fname.lstrip(str(prepend - 1) + "_duplicate_")
+        extracted_fnames.append(fname)
+        check_output(["mu", "extract", "--parts=%s" % no, "--overwrite", "--target-dir=/tmp/mu-extracted-images", mail])
+        rename("/tmp/mu-extracted-images/" + orig_fname, fname)
+        print("extracted", fname)
