@@ -1,0 +1,34 @@
+#!/usr/bin/env python3
+
+from argparse import ArgumentParser
+from pathlib import Path
+from shutil import copy, copytree
+
+
+parser = ArgumentParser()
+parser.add_argument("INF", help="File to backup.", type=Path)
+parser.add_argument("-m", "--move", help="Move, don't copy.", action="store_true")
+parser.add_argument(
+    "-f", "--overwrite", help="Overwrite existing backups.", action="store_true"
+)
+args = parser.parse_args()
+
+ATTEMPTS = 20
+
+dst = args.INF.with_suffix(args.INF.suffix + ".bak")
+if not args.overwrite:
+    for i in range(1, ATTEMPTS + 1):
+        if not dst.exists():
+            break
+        dst = args.INF.with_suffix(f"{args.INF.suffix}.{i}.bak")
+
+if dst.exists():
+    raise FileExistsError(f"Unable to rename with {ATTEMPTS} attempts: {dst} exists.")
+
+if args.move:
+    args.INF.rename(dst)
+else:
+    if args.INF.is_dir():
+        copytree(args.INF, dst)
+    else:
+        copy(args.INF, dst)
