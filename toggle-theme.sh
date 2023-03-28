@@ -30,6 +30,8 @@ function emacs_theme() {
     emacsclient -e "(spacemacs/load-theme 'solarized-$1)"
 }
 
+CACHEF=~/.cache/system-theme/theme
+
 case $1 in
     dark)
         MODE=dark
@@ -37,12 +39,21 @@ case $1 in
     light)
         MODE=light
         ;;
+    "")
+        MODE=$(cat $CACHEF 2>/dev/null || echo "dark")
+        case $MODE in
+            dark) MODE=light;;
+            light) MODE=dark;;
+        esac
+        ;;
     *)
         echo "Unknown theme: $1, should be one of 'dark' or 'light'"
         exit 1
         ;;
 esac
 
+mkdir -p $(dirname $CACHEF)
+echo $MODE > $CACHEF
 wofi_theme $MODE
 alacritty_theme $MODE
 bat_theme $MODE
