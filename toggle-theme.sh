@@ -1,13 +1,18 @@
 #!/bin/sh
 
+function wofi_theme() {
+    rm ~/.config/wofi/style.css
+    ln -rs ~/.config/wofi/style-$1.css ~/.config/wofi/style.css
+}
+}
+
+
 case $1 in
     dark)
-        rm ~/.config/wofi/style.css
-        ln -rs ~/.config/wofi/style-dark.css ~/.config/wofi/style.css 
+        wofi_theme dark
         ;;
     light)
-        rm ~/.config/wofi/style.css
-        ln -rs ~/.config/wofi/style-light.css ~/.config/wofi/style.css 
+        wofi_theme light
         ;;
     *)
         echo "Unknown theme: $1, should be one of 'dark' or 'light'"
