@@ -25,14 +25,16 @@ function alacritty_theme() {
 
 case $1 in
     dark)
-        wofi_theme dark
-        alacritty_theme dark
+        MODE=dark
         ;;
     light)
-        wofi_theme light
-        alacritty_theme light
+        MODE=light
         ;;
     *)
         echo "Unknown theme: $1, should be one of 'dark' or 'light'"
+        exit 1
         ;;
 esac
+
+wofi_theme $MODE
+alacritty_theme $MODE
