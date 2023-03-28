@@ -22,6 +22,10 @@ function alacritty_theme() {
     popd > /dev/null
 }
 
+function bat_theme() {
+    sed -i "s/--theme=.*/--theme=\"Solarized ($1)\"/" ~/.config/bat/config
+}
+
 
 case $1 in
     dark)
@@ -38,3 +42,4 @@ esac
 
 wofi_theme $MODE
 alacritty_theme $MODE
+bat_theme $MODE
