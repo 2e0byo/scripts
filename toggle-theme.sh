@@ -30,6 +30,13 @@ function emacs_theme() {
     emacsclient -e "(spacemacs/load-theme 'solarized-$1)"
 }
 
+function gtk_theme() {
+    case $1 in
+        light) gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita' ;;
+        dark) gsettings set org.gnome.desktop.interface gtk-theme 'Adwaita-dark' ;;
+    esac
+}
+
 CACHEF=~/.cache/system-theme/theme
 
 case $1 in
@@ -58,3 +65,4 @@ wofi_theme $MODE
 alacritty_theme $MODE
 bat_theme $MODE
 emacs_theme $MODE
+gtk_theme $MODE
