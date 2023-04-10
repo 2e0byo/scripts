@@ -32,8 +32,8 @@ function emacs_theme() {
 
 function gtk_theme() {
     case $1 in
-        light) gsettings set org.gnome.desktop.interface gtk-theme 'NumixSolarizedLightBlue' ;;
-        dark) gsettings set org.gnome.desktop.interface gtk-theme 'NumixSolarizedDarkBlue' ;;
+        light) gsettings set org.gnome.desktop.interface gtk-theme 'NumixSolarizedLightOrange' ;;
+        dark) gsettings set org.gnome.desktop.interface gtk-theme 'NumixSolarizedDarkOrange' ;;
     esac
 }
 
