@@ -1,4 +1,5 @@
 #!/usr/bin/python
+from json import loads
 from pathlib import Path
 from random import choices
 from subprocess import run
@@ -23,7 +24,10 @@ def load_backgrounds(mapping: dict[str, Path]):
 
 if __name__ == "__main__":
     imgs = Path("~/google-drive/Desktop Backgrounds").expanduser().resolve()
-    monitors = {"DP-1", "DP-2"}
+    monitors = set(
+        x["name"]
+        for x in loads(run(["hyprctl", "-j", "monitors"], capture_output=True).stdout)
+    )
     extns = {".jpg", ".jpeg", ".png"}
     available = [x for x in imgs.glob("*") if x.suffix.lower() in extns]
     backgrounds = dict(zip(monitors, choices(available, k=len(monitors))))
