@@ -2,11 +2,13 @@
 from pathlib import Path
 from random import choices
 from subprocess import run
-from filelock import FileLock
 from time import sleep
+
+from filelock import FileLock
 
 cmdbase = ["hyprctl", "hyprpaper"]
 lock = FileLock("/tmp/hyprpaper.lock")
+
 
 def load_backgrounds(mapping: dict[str, Path]):
     with lock:
