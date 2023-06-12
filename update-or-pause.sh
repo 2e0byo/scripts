@@ -1,5 +1,5 @@
 #!/bin/sh
-paru -Syu
+paru -Syu --sudoloop
 case $? in
     0)
         notify-send "System updated"
