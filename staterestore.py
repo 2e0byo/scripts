@@ -12,6 +12,7 @@ class Logexception(AbstractContextManager):
     ) -> bool | None:
         _, value, _ = args
         if value:
+            print("Suppressing exception:")
             print_exception(value)
         return True
 
