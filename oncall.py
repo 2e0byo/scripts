@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
+import inspect
 import json
 import subprocess
+from abc import ABC, abstractmethod, abstractproperty
 from argparse import ArgumentParser
 from typing import Callable
 from urllib import request
@@ -118,41 +120,79 @@ statefuls: list[Stateful] = [
 ]
 
 
-def on():
-    for stateful in statefuls:
-        stateful.sanitise()
+class ActionsABC(ABC):
+    @abstractproperty
+    def engaged(self) -> bool:
+        """Current state"""
 
+    @abstractmethod
+    def on(self):
+        """Engage."""
 
-def off():
-    for stateful in statefuls:
-        stateful.restore()
+    @abstractmethod
+    def off(self):
+        """Disengage."""
 
+    def toggle(self):
+        if self.engaged:
+            self.off()
+        else:
+            self.on()
 
-def help():
-    print(
-        """
-Sanitise the system during a video call.
+    def _public_methods(self) -> dict[str, Callable]:
+        return {
+            m: meth
+            for m in dir(self)
+            if not m.startswith("_") and callable(meth := getattr(self, m))
+        }
+
+    def help(self):
+        """Display this message and exit."""
+
+        doc = """
+{overall}
+
 Commands:
-    on: put the system into sanitised state
-   off: restore previous state
-  help: display this message and exit
-    """
-    )
+	{commands}
+        """.format(
+            overall=inspect.getdoc(self),
+            commands="\n\t".join(
+                f"{k}:\t{inspect.getdoc(v)}" for k, v in self._public_methods().items()
+            ),
+        )
+        print(doc)
+
+
+class Actions(ActionsABC):
+    """Sanitise the system during a video call."""
+
+    def __init__(self, statefuls: list[Stateful]):
+        self.statefuls = statefuls
+
+    @property
+    def engaged(self) -> bool:
+        return self.statefuls[0].sanitised
+
+    def on(self):
+        for stateful in self.statefuls:
+            stateful.sanitise()
+
+    def off(self):
+        for stateful in self.statefuls:
+            stateful.restore()
+
+    def _exec(self, name: str):
+        methods = self._public_methods()
+        if name in methods:
+            methods[name]()
+        else:
+            print("No such option:", name)
+            self.help()
+            exit(1)
 
 
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("cmd")
     args = parser.parse_args()
-
-    match args.cmd:
-        case "on":
-            on()
-        case "off":
-            off()
-        case "help":
-            help()
-        case x:
-            print("No such option:", x)
-            help()
-            exit(1)
+    Actions(statefuls)._exec(args.cmd)
