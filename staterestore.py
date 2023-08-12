@@ -43,3 +43,7 @@ class Stateful(ABC):
         with Logexception():
             self.set_state(json.loads(self.cachef.read_text()))
             self.cachef.unlink()
+
+    @property
+    def sanitised(self) -> bool:
+        return self.cachef.is_file()
