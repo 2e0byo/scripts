@@ -72,7 +72,12 @@ class Mopidy(Stateful):
         return {"state": self.mopidy.call("core.playback.get_state")}
 
     def set_state(self, state: dict):
-        self.mopidy.call("core.playback.set_state", params=[state["state"]])
+        self.mopidy.call(
+            {
+                "paused": "core.playback.pause",
+                "playing": "core.playback.play",
+            }[state["state"]]
+        )
 
 
 statefuls: list[Stateful] = [
