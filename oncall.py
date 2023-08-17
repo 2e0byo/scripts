@@ -76,6 +76,7 @@ class Mopidy(Stateful):
             {
                 "paused": "core.playback.pause",
                 "playing": "core.playback.play",
+                "stopped": "core.playback.stop",
             }[state["state"]]
         )
 
