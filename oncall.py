@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import json
 from argparse import ArgumentParser
+from pathlib import Path
 from urllib import request
 
 from cli import StatefulActions, call, run
@@ -8,17 +9,24 @@ from idle_inhibit import IdleInhibit
 from staterestore import Stateful
 
 
-def post(url: str, data: dict) -> dict:
-    req = request.Request(
-        url,
-        method="POST",
-        data=json.dumps(data).encode(),
-        headers={"Content-Type": "application/json"},
-    )
+def _req(method: str, url: str, data: dict, headers: dict) -> dict:
+    kwargs = {"method": method, "headers": headers}
+    if data:
+        kwargs["data"] = json.dumps(data).encode()
+        kwargs["headers"] |= {"Content-Type": "application/json"}
+    req = request.Request(url, **kwargs)
     with request.urlopen(req) as f:
         if f.status != 200:
             raise Exception(f"Status code is {f.status}")
         return json.load(f)
+
+
+def post(url: str, data: dict, headers: dict | None = None) -> dict:
+    return _req("POST", url, data=data, headers=headers or {})
+
+
+def get(url: str, headers: dict | None = None) -> dict:
+    return _req("GET", url, headers=headers or {}, data={})
 
 
 class JsonRPC:
@@ -47,6 +55,23 @@ class JsonRPC:
             raise Exception(data)
         else:
             return data["result"]
+
+
+class OnCallSensor(Stateful):
+    name = "oncall"
+    sanitised_state = {"state": "true"}
+    url = "https://home.2e0byo.co.uk/api/states/binary_sensor.on_call"
+
+    def __init__(self):
+        token = Path("~/.pass/on-call").expanduser().read_text().strip()
+        self.headers = {"Authorization": f"Bearer {token}"}
+        super().__init__()
+
+    def get_state(self) -> dict:
+        return {"state": get(self.url, headers=self.headers)["state"]}
+
+    def set_state(self, state: dict):
+        post(self.url, state, self.headers)
 
 
 class Notifications(Stateful):
@@ -79,6 +104,7 @@ statefuls: list[Stateful] = [
     Notifications(),
     Mopidy(),
     IdleInhibit(),
+    OnCallSensor(),
 ]
 
 
